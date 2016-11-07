@@ -265,6 +265,7 @@
 				33B260B91DD05D9D007307CB /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
