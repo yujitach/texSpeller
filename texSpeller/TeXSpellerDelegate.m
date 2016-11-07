@@ -5,13 +5,23 @@
 //  Created by Yuji on 2016/11/07.
 //  Copyright © 2016年 Yuji Tachikawa. All rights reserved.
 //
-
+@import AppKit;
 #import "TeXSpellerDelegate.h"
 
+
 @implementation TeXSpellerDelegate
+{
+    NSSpellChecker*checker;
+}
+- (TeXSpellerDelegate*)init
+{
+    checker=[NSSpellChecker sharedSpellChecker];
+    checker.language=@"English";
+    return self;
+}
 
 #pragma mark - old api
-
+#if 0
 - (NSRange)spellServer:(NSSpellServer *)sender findMisspelledWordInString:(NSString *)stringToCheck language:(NSString *)language wordCount:(NSInteger *)wordCount countOnly:(BOOL)countOnly{
     
     NSLog(@"Old api - find mispelled word in string: %@", stringToCheck);
@@ -31,6 +41,10 @@
     return nil;
 }
 
+
+#endif
+
+#pragma mark - new api
 -(NSString *) languageFromOthrography:(NSOrthography *)orthrography
 {
     if(orthrography && orthrography.allLanguages.firstObject) {
@@ -40,9 +54,11 @@
     }
 }
 
-#pragma mark - new api
-#if 0
 -(nullable NSArray<NSTextCheckingResult *> *)spellServer:(NSSpellServer *)sender checkString:(NSString *)stringToCheck offset:(NSUInteger)offset types:(NSTextCheckingTypes)checkingTypes options:(nullable NSDictionary<NSString *, id> *)options orthography:(nullable NSOrthography *)orthography wordCount:(NSInteger *)wordCount {
+    NSOrthography*o;
+    NSArray<NSTextCheckingResult *> * results=[checker checkString:stringToCheck range:NSMakeRange(offset,[stringToCheck length]-offset) types:checkingTypes options:options inSpellDocumentWithTag:0 orthography:&o wordCount:wordCount];
+    return results;
+#if 0
     
     BOOL checkSpelling = (checkingTypes & NSTextCheckingTypeSpelling) > 0;
     BOOL provideCorrections = (checkingTypes & NSTextCheckingTypeCorrection) > 0;
@@ -75,7 +91,7 @@
     }
     
     return results;
-}
 #endif
+}
 
 @end
