@@ -12,18 +12,65 @@
 @implementation TeXSpellerDelegate
 {
     NSSpellChecker*checker;
+    NSCharacterSet*alpha;
 }
 - (TeXSpellerDelegate*)init
 {
     checker=[NSSpellChecker sharedSpellChecker];
     checker.language=@"English";
+    alpha=[NSCharacterSet characterSetWithCharactersInString:@"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"];
     return self;
+}
+
+-(NSString*)stringStrippedOfTeXFromString:(NSString*)string
+{
+    NSMutableString*result=[NSMutableString string];
+    NSScanner*scanner=[NSScanner scannerWithString:string];
+    scanner.charactersToBeSkipped=nil;
+    for(;;){
+        NSString*bit=@"";
+        if([scanner scanUpToString:@"\\" intoString:&bit]){
+            [result appendString:bit];
+        }
+        if([scanner isAtEnd])
+            break;
+        // at this point the next character is guaranteed to be a backslash
+        [scanner scanString:@"\\" intoString:nil];
+        [result appendString:@"\\"];
+        if([scanner scanCharactersFromSet:alpha intoString:&bit]){
+            for(int i=0;i<[bit length];i++){
+                [result appendString:@"#"];
+            }
+            if([scanner isAtEnd])
+                break;
+            if([@[@"cite",@"label",@"ref",@"eqref",@"begin",@"end"] containsObject:bit]){
+                if([scanner scanString:@"{" intoString:nil]){
+                    [result appendString:@"{"];
+                }
+                if([scanner isAtEnd])
+                    break;
+                NSString*zot=@"";
+                if([scanner scanUpToString:@"}" intoString:&zot]){
+                    for(int i=0;i<[zot length];i++){
+                        [result appendString:@"#"];
+                    }
+                }
+                if([scanner isAtEnd])
+                    break;
+            }
+        }
+        if([scanner isAtEnd])
+            break;
+    }
+    return result;
 }
 
 #pragma mark - old api
 - (NSRange)spellServer:(NSSpellServer *)sender findMisspelledWordInString:(NSString *)stringToCheck language:(NSString *)language wordCount:(NSInteger *)wordCount countOnly:(BOOL)countOnly{
     NSLog(@"%@",stringToCheck);
-    return [checker checkSpellingOfString:stringToCheck startingAt:0 language:language wrap:NO inSpellDocumentWithTag:0 wordCount:wordCount];
+    NSString*transformed=[self stringStrippedOfTeXFromString:stringToCheck];
+    NSLog(@"%@",transformed);
+    return [checker checkSpellingOfString:transformed startingAt:0 language:language wrap:NO inSpellDocumentWithTag:0 wordCount:wordCount];
 }
 
 - (nullable NSArray<NSString *> *)spellServer:(NSSpellServer *)sender suggestGuessesForWord:(NSString *)word inLanguage:(NSString *)language{
